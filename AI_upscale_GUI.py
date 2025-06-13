@@ -1,7 +1,7 @@
 import os
 import subprocess
 import sys
-import time  # <--- Добавлено для измерения времени
+import time
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -22,7 +22,7 @@ except ImportError:
     from tkinterdnd2 import DND_FILES, TkinterDnD
 
 try:
-    import cv2  # pip install opencv-python
+    import cv2
 except ImportError:
     pip_install("opencv-python")
     import cv2
@@ -71,10 +71,11 @@ class ESRGAN_GUI:
         self.output_dir = tk.StringVar()
 
         self.gpu_available = False
-        self.current_process = None  # <--- Добавлено
+        self.current_process = None 
         self.setup_ui()
-        self.auto_set_tile()  # <--- добавьте этот вызов
-        self.prepare_env()
+        self.auto_set_tile()
+        # self.prepare_env()
+        threading.Thread(target=self.prepare_env, daemon=True).start()
 
     def setup_ui(self):
         self.label = tk.Label(self.root, text="Выберите фото/видео для улучшения или перетащите его на область ниже", font=("Arial", 12))
@@ -143,7 +144,6 @@ class ESRGAN_GUI:
         self.frame_downscale_entry = tk.Entry(param_frame, textvariable=self.frame_downscale, width=4, justify="right")
         self.frame_downscale_entry.grid(row=1, column=3, sticky="w")
 
-        # --- Размер плитки и Потоков на одной строке ---
         tk.Label(param_frame, text="Размер плитки:").grid(row=2, column=0, sticky="e")
         ttk.Combobox(param_frame, textvariable=self.tile, values=["0", "32", "64", "92", "128", "192", "256", "512"], width=10).grid(row=2, column=1, sticky="w", padx=(0, 10))
 
@@ -160,7 +160,6 @@ class ESRGAN_GUI:
         tk.Entry(param_frame, textvariable=self.output_dir, width=30).grid(row=5, column=1, sticky="w")
         tk.Button(param_frame, text="Выбрать...", command=self.choose_output_dir).grid(row=5, column=2, padx=5)
 
-        # --- ДОБАВИТЬ чекбокс "Очистить TEMP" ---
         self.clear_temp = tk.BooleanVar(value=True)
         self.clear_temp_check = tk.Checkbutton(
             param_frame, text="Очистить TEMP после видео", variable=self.clear_temp, state=tk.NORMAL
@@ -237,16 +236,19 @@ class ESRGAN_GUI:
             self.root.destroy()
 
     def prepare_env(self):
-        self.status.config(text="Подготовка окружения...")
+        self.status.config(text="Поиск Python 3.10...", fg="blue")
         self.root.update_idletasks()
-
         python_cmd = self.find_python310()
 
         if not os.path.exists(REAL_ESRGAN_DIR):
+            self.status.config(text="Клонирование Real-ESRGAN...", fg="blue")
+            self.root.update_idletasks()
             subprocess.run(["git", "clone", REAL_ESRGAN_REPO, "Real-ESRGAN"], check=True)
 
         venv_dir = os.path.join(REAL_ESRGAN_DIR, "venv")
         if not os.path.exists(venv_dir):
+            self.status.config(text="Создание виртуального окружения...", fg="blue")
+            self.root.update_idletasks()
             subprocess.run([python_cmd, "-m", "venv", "venv"], cwd=REAL_ESRGAN_DIR, check=True)
 
         global PYTHON_EXEC
@@ -254,8 +256,16 @@ class ESRGAN_GUI:
             REAL_ESRGAN_DIR, "venv", "Scripts" if os.name == "nt" else "bin", "python"
         ))
 
+        self.status.config(text="Обновление pip...", fg="blue")
+        self.root.update_idletasks()
         subprocess.run([PYTHON_EXEC, "-m", "pip", "install", "--upgrade", "pip"], check=True)
+
+        self.status.config(text="Установка numpy...", fg="blue")
+        self.root.update_idletasks()
         subprocess.run([PYTHON_EXEC, "-m", "pip", "install", "numpy<2"], check=True)
+
+        self.status.config(text="Установка realesrgan...", fg="blue")
+        self.root.update_idletasks()
         subprocess.run([PYTHON_EXEC, "-m", "pip", "install", "realesrgan"], cwd=REAL_ESRGAN_DIR, check=True)
 
         # Исправление: создать realesrgan/version.py если его нет
