@@ -82,10 +82,10 @@ python AI_upscale_GUI.py
 
 1. Перетащите изображение или видео в окно программы **или** нажмите **«Выбрать медиафайл»**
 2. Настройте параметры обработки:
-   - модель (см. ![краткий обзор моделей](assets/Краткий обзор моделей.pdf)
+   - модель (см. [Краткий обзор моделей (PDF)](assets/Краткий%20обзор%20моделей.pdf))
    - масштаб
    - улучшение лиц (face enhancement)
-   - tile size (оптимизируется автоматически)
+   - tile size (оптимизируется автоматически, в зависимости от количества VRAM)
    - режим работы: GPU или CPU
 3. Нажмите кнопку **«Обработать»**
 4. По завершении результат отобразится в правой части окна и сохранится в папку `output/` (или выбранную вами)
@@ -106,7 +106,7 @@ python AI_upscale_GUI.py
 
 ```bash
 pip install pyinstaller
-pyinstaller --noconsole --onefile AI_upscale_video_stable.py
+pyinstaller --noconsole --onefile AI_upscale_GUI.py
 ```
 
 Файл появится в папке `dist/`.
@@ -117,7 +117,7 @@ pyinstaller --noconsole --onefile AI_upscale_video_stable.py
 
 ```
 AI-Upscaler-GUI/
-├── AI_upscale_video.py          # основной скрипт GUI
+├── AI_upscale_GUI.py          # основной скрипт GUI
 ├── Real-ESRGAN/                 # автоматическое клонирование из GitHub
 ├── requirements.txt             # зависимости для GUI
 ├── README.md                    # этот файл
