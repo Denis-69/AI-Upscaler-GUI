@@ -18,7 +18,7 @@ def pip_install(package):
 
 
 # Ensure third-party runtime libraries are available and expose them as module
-# level names so the GUI can import them from here.
+# level names so the GUI can import them from here. 
 try:
     from PIL import Image, ImageTk
 except Exception:
