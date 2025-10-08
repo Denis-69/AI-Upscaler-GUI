@@ -13,7 +13,7 @@ import tempfile
 import zipfile
 
 # Pull third-party availability/helpers from prepare_environment to avoid
-# duplicating installation logic and import attempts in multiple modules.
+# duplicating installation logic and import attempts in multiple modules. 
 from prepare_environment import (
     prepare_env,
     find_python310,
