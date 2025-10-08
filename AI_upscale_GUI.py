@@ -80,6 +80,7 @@ class ESRGAN_GUI:
         self.output_dir = tk.StringVar()
         # Build UI in a dedicated method
         self.setup_ui()
+<<<<<<< HEAD
 
         # --- Start background environment preparation ---
         # prepare_environment.prepare_env will call the provided setter with the
@@ -117,6 +118,11 @@ class ESRGAN_GUI:
         except Exception:
             # If background start fails, leave it for manual call
             pass
+=======
+        self.auto_set_tile()  # <--- добавьте этот вызов
+        # self.prepare_env()
+        threading.Thread(target=self.prepare_env, daemon=True).start()
+>>>>>>> 497bb3a (Обновлён)
 
     def setup_ui(self):
         # Main window title and size
@@ -257,6 +263,7 @@ class ESRGAN_GUI:
         return find_python310(self)
 
     def prepare_env(self):
+<<<<<<< HEAD
         # Backwards-compatible wrapper that invokes the refactored function
         # synchronously. Ensure the module-level PYTHON_EXEC is set by the
         # setter passed to prepare_env.
@@ -267,6 +274,75 @@ class ESRGAN_GUI:
                 pass
 
         prepare_env(self, REAL_ESRGAN_DIR, CONSTRAINTS_FILE, _setter)
+=======
+        self.status.config(text="Поиск Python 3.10...", fg="blue")
+        self.root.update_idletasks()
+        python_cmd = self.find_python310()
+
+        if not os.path.exists(REAL_ESRGAN_DIR):
+            self.status.config(text="Клонирование Real-ESRGAN...", fg="blue")
+            self.root.update_idletasks()
+            subprocess.run(["git", "clone", REAL_ESRGAN_REPO, "Real-ESRGAN"], check=True)
+
+        venv_dir = os.path.join(REAL_ESRGAN_DIR, "venv")
+        if not os.path.exists(venv_dir):
+            self.status.config(text="Создание виртуального окружения...", fg="blue")
+            self.root.update_idletasks()
+            subprocess.run([python_cmd, "-m", "venv", "venv"], cwd=REAL_ESRGAN_DIR, check=True)
+
+        global PYTHON_EXEC
+        PYTHON_EXEC = os.path.abspath(os.path.join(
+            REAL_ESRGAN_DIR, "venv", "Scripts" if os.name == "nt" else "bin", "python"
+        ))
+
+        self.status.config(text="Обновление pip...", fg="blue")
+        self.root.update_idletasks()
+        subprocess.run([PYTHON_EXEC, "-m", "pip", "install", "--upgrade", "pip"], check=True)
+
+        self.status.config(text="Установка numpy...", fg="blue")
+        self.root.update_idletasks()
+        subprocess.run([PYTHON_EXEC, "-m", "pip", "install", "numpy<2"], check=True)
+
+        self.status.config(text="Установка realesrgan...", fg="blue")
+        self.root.update_idletasks()
+        subprocess.run([PYTHON_EXEC, "-m", "pip", "install", "realesrgan"], cwd=REAL_ESRGAN_DIR, check=True)
+
+        # Исправление: создать realesrgan/version.py если его нет
+        version_py = os.path.join(REAL_ESRGAN_DIR, "realesrgan", "version.py")
+        if not os.path.exists(version_py):
+            with open(version_py, "w", encoding="utf-8") as f:
+                f.write("__version__ = '0.0.1'\n")
+        # --- Конец блока ---
+
+        cuda_version = self.detect_cuda_version()
+        if cuda_version:
+            self.status.config(text=f"CUDA {cuda_version} обнаружена, установка Torch...")
+            cuda_str = cuda_version.replace(".", "")
+            if cuda_str.startswith("12"):
+                torch_cmd = ["pip", "install", "torch==2.1.0", "torchvision==0.16.0", "--index-url", "https://download.pytorch.org/whl/cu121"]
+            elif cuda_str.startswith("11"):
+                torch_cmd = ["pip", "install", "torch==2.0.1", "torchvision==0.15.2", "--index-url", "https://download.pytorch.org/whl/cu117"]
+            else:
+                torch_cmd = ["pip", "install", "torch==2.0.1+cpu", "torchvision==0.15.2+cpu", "--index-url", "https://download.pytorch.org/whl/cpu"]
+        else:
+            self.status.config(text="CUDA не обнаружена. Установка CPU версии Torch")
+            torch_cmd = ["pip", "install", "torch==2.0.1+cpu", "torchvision==0.15.2+cpu", "--index-url", "https://download.pytorch.org/whl/cpu"]
+
+        subprocess.run([PYTHON_EXEC, "-m"] + torch_cmd, check=True)
+
+        result = subprocess.run(
+            [PYTHON_EXEC, "-c", "import torch; print(torch.cuda.is_available())"],
+            capture_output=True, text=True
+        )
+        self.gpu_available = "True" in result.stdout
+
+        if not self.gpu_available:
+            self.device_mode.set("CPU")
+            self.device_combo.config(state="disabled")
+            self.status.config(text="GPU не обнаружен. Работа в режиме CPU.")
+        else:
+            self.status.config(text="Готово. Выберите изображение.")
+>>>>>>> 497bb3a (Обновлён)
 
     def on_canvas_click(self, event):
         # Определяем, по какому изображению кликнули (левое или правое)
